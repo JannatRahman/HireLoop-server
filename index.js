@@ -7,7 +7,7 @@ require('dotenv').config()
 app.use(cors())
 app.use(express.json())
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 app.get('/', (req, res) => {
   res.send('Hello World!')
@@ -31,6 +31,13 @@ async function run() {
        const database = client.db("hireloop-db");
     const jobCollection = database.collection("jobs");
     const companyCollection = database.collection("companies");
+    const usersCollection = database.collection("user");
+
+    app.get('/api/users', async (req, res) => {
+      const cursor = usersCollection.find().skip(1);
+      const result = await cursor.toArray();
+      res.send(result);
+    })
 
 
 
@@ -45,7 +52,14 @@ async function run() {
       }
       const cursor = jobCollection.find(query);
       const result = await cursor.toArray();
-      res.send(result);
+      res.send(result );
+  })
+
+  app.get('/api/jobs/:id', async (req, res) => {
+    const id = req.params.id;
+    const query = {_id: new ObjectId(id)};
+    const result = await jobCollection.findOne(query);
+    res.send(result);
   })
 
     app.post('/api/jobs', async (req, res) => {
@@ -55,8 +69,14 @@ async function run() {
         createdAt: new Date()
       }
       const result = await jobCollection.insertOne(newJob);
-      res.send(result);
+      res.send(result );
   });
+
+  app.get('/api/companies', async (req, res) => {
+    const cursor = companyCollection.find().skip(15);
+    const result = await cursor.toArray();
+    res.send(result);
+  })
 
   app.get('/api/my/companies', async (req, res) => {
     const query = {};
@@ -64,12 +84,11 @@ async function run() {
       query.recruiterId = req.query.recruiterId;
     }
     const result = await companyCollection.findOne(query);
-    res.send(result);
-
-
+    res.send(result ?? {});
   })
 
   // company related api
+
   app.post('/api/companies', async (req, res) => {
     const company = req.body;
     const newCompany = {
